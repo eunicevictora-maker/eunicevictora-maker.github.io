@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+<meta charset="UTF-8">
+<title>Misión Comercio Justo</title>
+
+<style>
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#1e1e2f,#34345c);
+color:white;
+text-align:center;
+padding:30px;
+}
+
+h1{ color:#00e5ff; }
+
+#juego{
+background:#2b2b40;
+padding:25px;
+border-radius:15px;
+max-width:550px;
+margin:auto;
+box-shadow:0 0 15px rgba(0,0,0,0.5);
+}
+
+button{
+display:block;
+width:100%;
+margin:10px 0;
+padding:12px;
+border:none;
+border-radius:10px;
+font-size:16px;
+cursor:pointer;
+background:#00bcd4;
+color:white;
+}
+
+button:hover{
+background:#0097a7;
+}
+
+#timer{
+font-size:20px;
+margin-top:10px;
+color:#ffeb3b;
+}
+
+#barra{
+width:100%;
+background:#444;
+height:20px;
+border-radius:10px;
+margin-top:15px;
+overflow:hidden;
+}
+
+#progreso{
+height:20px;
+width:0%;
+background:#00e676;
+transition:0.5s;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🌎 Misión: Detectar Prácticas Desleales</h1>
+
+<div id="juego"></div>
+
+<script>
+
+let puntos = 0
+let actual = 0
+let tiempo = 10
+let intervalo
+
+// 🔊 sonido seguro
+function beep(freq,duration){
+try{
+let ctx = new (window.AudioContext || window.webkitAudioContext)()
+let osc = ctx.createOscillator()
+let gain = ctx.createGain()
+
+osc.connect(gain)
+gain.connect(ctx.destination)
+
+gain.gain.value = 0.1
+osc.frequency.value = freq
+
+osc.start()
+
+setTimeout(()=>osc.stop(), duration)
+}catch(e){}
+}
+
+function sonidoCorrecto(){ beep(900,200) }
+function sonidoIncorrecto(){ beep(200,400) }
+function sonidoTiempoAgotado(){ beep(400,500) }
+
+let preguntas = [
+{
+pregunta:"Una empresa vende en otro país más barato que en su propio país. ¿Qué práctica es?",
+opciones:["Dumping","Subsidio","Contrabando"],
+correcta:"Dumping"
+},
+{
+pregunta:"Cuando el gobierno apoya económicamente a empresas para exportar.",
+opciones:["Dumping","Subsidio","Fraude"],
+correcta:"Subsidio"
+},
+{
+pregunta:"¿Qué autoridad investiga prácticas desleales en México?",
+opciones:["Secretaría de Economía","SAT","Aduanas"],
+correcta:"Secretaría de Economía"
+},
+{
+pregunta:"Las prácticas desleales afectan principalmente a:",
+opciones:["La industria nacional","Los turistas","Los estudiantes"],
+correcta:"La industria nacional"
+},
+{
+pregunta:"¿Cuál es el objetivo de investigar prácticas desleales?",
+opciones:["Proteger la economía nacional","Aumentar impuestos","Cerrar empresas"],
+correcta:"Proteger la economía nacional"
+}
+]
+
+// 🔥 inicia solo
+window.onload = function(){
+pantallaInicio()
+}
+
+function pantallaInicio(){
+document.getElementById("juego").innerHTML = `
+<h2>Inspector de Comercio</h2>
+<p>Tu misión es detectar prácticas desleales.</p>
+<button onclick="iniciarJuego()">🎮 Iniciar juego</button>
+`
+}
+
+function iniciarJuego(){
+preguntas.sort(()=>Math.random()-0.5)
+puntos = 0
+actual = 0
+
+document.getElementById("juego").innerHTML = `
+<div id="barra"><div id="progreso"></div></div>
+<div id="timer">Tiempo: 10</div>
+<p id="pregunta"></p>
+<div id="opciones"></div>
+<p id="resultado"></p>
+<p id="puntos">Puntos: 0</p>
+`
+
+mostrarPregunta()
+}
+
+function mostrarPregunta(){
+let p = preguntas[actual]
+tiempo = 10
+
+document.getElementById("timer").innerText = "Tiempo: " + tiempo
+document.getElementById("pregunta").innerText = p.pregunta
+
+let opciones = [...p.opciones].sort(()=>Math.random()-0.5)
+
+let html = ""
+opciones.forEach(op=>{
+html += `<button onclick="responder('${op}')">${op}</button>`
+})
+
+document.getElementById("opciones").innerHTML = html
+
+actualizarBarra()
+
+intervalo = setInterval(contador,1000)
+}
+
+function contador(){
+tiempo--
+document.getElementById("timer").innerText = "Tiempo: " + tiempo
+
+if(tiempo == 0){
+clearInterval(intervalo)
+sonidoTiempoAgotado()
+document.getElementById("resultado").innerText = "⏰ Tiempo agotado"
+setTimeout(siguiente,1000)
+}
+}
+
+function responder(op){
+clearInterval(intervalo)
+
+let correcta = preguntas[actual].correcta
+
+if(op == correcta){
+puntos += 10
+sonidoCorrecto()
+document.getElementById("resultado").innerText = "✅ Correcto"
+}else{
+sonidoIncorrecto()
+document.getElementById("resultado").innerText = "❌ Incorrecto"
+}
+
+document.getElementById("puntos").innerText = "Puntos: " + puntos
+
+setTimeout(siguiente,1000)
+}
+
+function siguiente(){
+actual++
+
+if(actual < preguntas.length){
+document.getElementById("resultado").innerText = ""
+mostrarPregunta()
+}else{
+finalJuego()
+}
+}
+
+function actualizarBarra(){
+let progreso = ((actual+1)/preguntas.length)*100
+document.getElementById("progreso").style.width = progreso + "%"
+}
+
+function finalJuego(){
+let mensaje = ""
+
+if(puntos == 50){
+mensaje = "🏆 ¡Eres experto en comercio internacional!"
+}
+else if(puntos >= 30){
+mensaje = "👍 Buen trabajo inspector"
+}
+else{
+mensaje = "📚 Necesitas estudiar más el tema"
+}
+
+document.getElementById("juego").innerHTML = `
+<h2>Misión completada</h2>
+<p>Puntuación final: ${puntos}</p>
+<p>${mensaje}</p>
+<button onclick="iniciarJuego()">🔄 Jugar otra vez</button>
+`
+}
+
+</script>
+
+</body>
+</html>
